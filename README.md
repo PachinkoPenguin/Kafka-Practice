@@ -1,6 +1,15 @@
 # Sistema de Mensajería Kafka con Spring Boot y React
 
-Este proyecto implementa un sistema de mensajería basado en Kafka donde se envían mensajes desde Postman hacia un productor implementado en Spring Boot. El productor analiza el contenido del mensaje y lo envía dinámicamente a uno de tres tópicos de Kafka.
+Este proyecto implementa un sistema de mensajería basado en Kafka donde se envían mensajes desde Postman hacia un productor implementado en Spring Boot. El productor analiza el contenido del mensaje y lo envía dinámicamente a uno de tres tópicos de Kafka (topico1, topico2, topico3). Cada tópico tiene dos particiones.
+
+## Descripción del Sistema
+
+El sistema permite:
+1. Enviar mensajes a través de una API REST implementada con Spring Boot
+2. Análisis del contenido del mensaje para determinar su destino (usando palabras clave)
+3. Consumo de mensajes por partición específica de cada tópico
+4. Comunicación en tiempo real mediante WebSocket a una interfaz React
+5. Visualización organizada de los mensajes por tópico y partición
 
 ## Estructura del Proyecto
 
@@ -20,28 +29,28 @@ Este proyecto implementa un sistema de mensajería basado en Kafka donde se env�
 ### 1. Iniciar Kafka y Zookeeper
 
 ```bash
-cd /home/ada/Development/School/Kafka
+cd Kafka
 docker compose up -d
 ```
 
 ### 2. Iniciar el Productor
 
 ```bash
-cd /home/ada/Development/School/Kafka/str-producer
+cd Kafka/str-producer
 ./mvnw spring-boot:run
 ```
 
 ### 3. Iniciar el Consumidor
 
 ```bash
-cd /home/ada/Development/School/Kafka/str-consumer
+cd Kafka/str-consumer
 ./mvnw spring-boot:run
 ```
 
 ### 4. Iniciar la Interfaz React
 
 ```bash
-cd /home/ada/Development/School/Kafka/kafka-react-ui-new
+cd Kafka/kafka-react-ui-new
 npm install
 npm start
 ```
@@ -75,3 +84,71 @@ La interfaz mostrará los mensajes recibidos por cada consumidor, agrupados por 
 ## Herramientas Adicionales
 
 Para visualizar los tópicos de Kafka y su estado, visita Kafdrop: http://localhost:19000
+
+## Arquitectura del Sistema
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────────────┐
+│   Postman   │────▶│  Producer   │────▶│ Kafka (3 tópicos,   │
+└─────────────┘     │ (Spring Boot)│     │  2 particiones c/u) │
+                    └─────────────┘     └──────────┬──────────┘
+                                                  │
+                                                  ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────────────┐
+│   React UI  │◀────│  Consumer   │◀────│ 6 consumidores      │
+│  (Browser)  │     │ (Spring Boot)│     │ (1 por partición)   │
+└─────────────┘     └─────────────┘     └─────────────────────┘
+     WebSocket/REST
+```
+
+## Flujo de Trabajo
+
+1. El usuario envía un mensaje mediante Postman al endpoint del productor
+2. El productor analiza el contenido del mensaje para determinar el tópico de destino
+3. El mensaje es enviado al tópico correspondiente en Kafka
+4. Los consumidores específicos de cada partición reciben el mensaje
+5. El consumidor procesa el mensaje y lo envía a la interfaz React a través de WebSocket
+6. La interfaz React muestra el mensaje recibido en tiempo real
+
+## Detalles de Implementación
+
+- **Productor**: Utiliza Spring Kafka para enviar mensajes a los tópicos
+- **Consumidor**: Implementa listeners específicos para cada partición de cada tópico
+- **API REST**: Para consultar históricos de mensajes
+- **WebSocket**: Para comunicación en tiempo real entre el backend y el frontend
+- **React**: Interfaz de usuario que muestra los mensajes organizados por tópico y partición
+
+## Solución de Problemas Comunes
+
+### Errores en el Consumidor
+
+Si encuentras errores relacionados con la variable `log` en el consumidor:
+```
+cannot find symbol symbol: variable log location: class ...
+```
+Este error puede ocurrir si la anotación `@Log4j2` no está siendo procesada correctamente. Asegúrate de que:
+- La dependencia de Lombok está correctamente configurada
+- La herramienta de procesamiento de anotaciones está habilitada en tu IDE
+
+### Errores en React
+
+Si la aplicación React muestra el error `Cannot find module 'resolve'`:
+```
+Error: Cannot find module 'resolve'
+```
+Este problema puede solucionarse de las siguientes maneras:
+1. Instalar el módulo faltante: `npm install resolve`
+2. Si persiste el error, crear un nuevo proyecto React y migrar el código
+
+### Problemas de CORS
+
+Si experimentas errores de CORS al conectar el frontend con el backend:
+1. Asegúrate de que la configuración CORS en `StringConsumerConfig.java` incluye los orígenes correctos
+2. Verifica que el puerto de tu aplicación React (3000 o 3001) esté permitido en la configuración
+
+### Problemas con Docker
+
+Si hay problemas con los contenedores de Docker:
+1. Detén los contenedores: `docker compose down`
+2. Elimina los volúmenes si es necesario: `docker compose down -v`
+3. Reinicia los contenedores: `docker compose up -d`
