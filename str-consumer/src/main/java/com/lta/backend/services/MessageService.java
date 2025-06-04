@@ -32,8 +32,14 @@ public class MessageService {
             messages.remove(0);
         }
         
-        // Enviar mensaje a través de WebSocket
-        messagingTemplate.convertAndSend("/topic/messages", message);
+        try {
+            // Enviar mensaje a través de WebSocket
+            log.info("Enviando mensaje por WebSocket: {}", message);
+            messagingTemplate.convertAndSend("/topic/messages", message);
+            log.info("Mensaje enviado por WebSocket con éxito");
+        } catch (Exception e) {
+            log.error("Error al enviar mensaje por WebSocket: {}", e.getMessage(), e);
+        }
     }
 
     public List<KafkaMessage> getAllMessages() {

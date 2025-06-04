@@ -18,9 +18,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Permitir conexiones desde cualquier origen para propósitos de desarrollo
+        // Permitir conexiones desde orígenes específicos (más seguro que "*")
         registry.addEndpoint("/kafka-websocket")
-                .setAllowedOrigins("*")
-                .withSockJS();
+                .setAllowedOrigins("http://localhost:3000", "http://localhost:3001")
+                .withSockJS()
+                .setHeartbeatTime(10000)
+                .setClientLibraryUrl("https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js");
     }
 }

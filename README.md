@@ -26,28 +26,43 @@ El sistema permite:
 
 ## Iniciar el Sistema
 
-### 1. Iniciar Kafka y Zookeeper
+### Método 1: Script de inicio automático
+
+```bash
+cd Kafka
+./start-services.sh
+```
+
+Este script iniciará automáticamente todos los servicios en el orden correcto:
+1. Kafka y Zookeeper con Docker Compose
+2. El productor Spring Boot
+3. El consumidor Spring Boot
+4. La interfaz React
+
+### Método 2: Inicio manual
+
+#### 1. Iniciar Kafka y Zookeeper
 
 ```bash
 cd Kafka
 docker compose up -d
 ```
 
-### 2. Iniciar el Productor
+#### 2. Iniciar el Productor
 
 ```bash
 cd Kafka/str-producer
 ./mvnw spring-boot:run
 ```
 
-### 3. Iniciar el Consumidor
+#### 3. Iniciar el Consumidor
 
 ```bash
 cd Kafka/str-consumer
 ./mvnw spring-boot:run
 ```
 
-### 4. Iniciar la Interfaz React
+#### 4. Iniciar la Interfaz React
 
 ```bash
 cd Kafka/kafka-react-ui-new
@@ -81,9 +96,28 @@ La interfaz mostrará los mensajes recibidos por cada consumidor, agrupados por 
 - Offset
 - Timestamp
 
+Los mensajes se actualizarán **automáticamente en tiempo real** cuando se envíe un nuevo mensaje desde Postman, sin necesidad de refrescar la página. La aplicación mantiene una conexión WebSocket activa con el backend y muestra el estado de la conexión en la parte superior de la página.
+
 ## Herramientas Adicionales
 
 Para visualizar los tópicos de Kafka y su estado, visita Kafdrop: http://localhost:19000
+
+## Solución de Problemas
+
+### Si los mensajes no aparecen en tiempo real:
+
+1. Verifica la consola del navegador para ver si hay errores de conexión WebSocket
+2. Comprueba que el backend esté configurado correctamente para enviar mensajes por WebSocket
+3. Asegúrate que el CORS esté correctamente configurado en el backend
+4. La aplicación incluye un mecanismo de reconexión automática si se pierde la conexión WebSocket
+5. Como respaldo, la interfaz refresca los mensajes cada 30 segundos mediante una petición HTTP
+
+### Si hay problemas con Lombok:
+
+Este proyecto utiliza Lombok para reducir el código repetitivo. Si encuentras errores como "Cannot find symbol":
+1. Asegúrate de tener el plugin de Lombok instalado en tu IDE
+2. Verifica que la dependencia de Lombok esté correctamente configurada en el pom.xml
+3. Ejecuta `mvn clean install` para regenerar las clases
 
 ## Arquitectura del Sistema
 

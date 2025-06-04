@@ -7,28 +7,42 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  // Configuración inicial de WebSocket
+  // Cargar mensajes iniciales
   useEffect(() => {
-    // Cargar mensajes iniciales
     fetch('http://localhost:8100/api/messages')
       .then(response => response.json())
       .then(data => {
+        console.log("Mensajes iniciales cargados:", data.length);
         setMessages(data);
       })
       .catch(error => console.error('Error fetching initial messages:', error));
+  }, []);
 
-    // Configurar conexión WebSocket
+  // Configuración de WebSocket
+  useEffect(() => {
+    console.log("Configurando conexión WebSocket...");
+    
+    // Crear conexión WebSocket
     const socket = new SockJS('http://localhost:8100/kafka-websocket');
     const client = new Client({
       webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
       onConnect: () => {
+        console.log("WebSocket conectado exitosamente");
         setConnected(true);
+        
+        // Suscribirse al tópico de mensajes
         client.subscribe('/topic/messages', message => {
           try {
+            console.log("Mensaje recibido vía WebSocket:", message.body);
             const receivedMessage = JSON.parse(message.body);
+            
             setMessages(prevMessages => {
-              // Evitar duplicados basados en offset y topic
+              // Evitar duplicados
               const exists = prevMessages.some(m => 
                 m.offset === receivedMessage.offset && 
                 m.topic === receivedMessage.topic && 
@@ -36,11 +50,14 @@ function App() {
               );
               
               if (exists) {
+                console.log("Mensaje duplicado descartado");
                 return prevMessages;
               }
               
-              // Mantener solo los últimos 100 mensajes
+              console.log("Nuevo mensaje añadido");
+              // Añadir el nuevo mensaje al principio y mantener los últimos 100
               const newMessages = [receivedMessage, ...prevMessages];
+              setLastRefresh(new Date());
               return newMessages.slice(0, 100);
             });
           } catch (error) {
@@ -48,11 +65,16 @@ function App() {
           }
         });
       },
+      onStompError: frame => {
+        console.error('STOMP error:', frame);
+      },
       onDisconnect: () => {
+        console.log("WebSocket desconectado");
         setConnected(false);
       },
-      debug: str => {
-        console.log(str);
+      onWebSocketClose: () => {
+        console.log("Conexión WebSocket cerrada");
+        setConnected(false);
       },
     });
 
@@ -61,11 +83,47 @@ function App() {
 
     // Limpiar al desmontar
     return () => {
-      if (client) {
+      console.log("Limpiando conexión WebSocket");
+      if (client && client.connected) {
         client.deactivate();
       }
     };
   }, []);
+
+  // Reconexión automática si se pierde la conexión
+  useEffect(() => {
+    if (!connected && stompClient) {
+      const timer = setTimeout(() => {
+        console.log("Intento de reconexión automática...");
+        try {
+          stompClient.activate();
+        } catch (error) {
+          console.error("Error en reconexión:", error);
+        }
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [connected, stompClient]);
+
+  // Refrescar mensajes cada 30 segundos como respaldo
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (connected) {
+        console.log("Refrescando mensajes...");
+        fetch('http://localhost:8100/api/messages')
+          .then(response => response.json())
+          .then(data => {
+            console.log("Mensajes refrescados:", data.length);
+            setMessages(data);
+            setLastRefresh(new Date());
+          })
+          .catch(error => console.error('Error refreshing messages:', error));
+      }
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [connected]);
 
   // Renderizar los mensajes agrupados por tópico y partición
   const renderMessageGroups = () => {
@@ -112,6 +170,9 @@ function App() {
         <h1>Kafka Message Viewer</h1>
         <div className="connection-status">
           Estado: {connected ? 'Conectado' : 'Desconectado'}
+          <div className="last-refresh">
+            Última actualización: {lastRefresh.toLocaleTimeString()}
+          </div>
         </div>
       </header>
       <div className="app-content">
