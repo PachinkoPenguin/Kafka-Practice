@@ -13,6 +13,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.RecordInterceptor;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.HashMap;
 
@@ -42,11 +45,22 @@ public class StringConsumerConfig {
 
     private RecordInterceptor<String,String> validMessage(){
         return (record,consumer) -> {
-            if(record.value().contains("Suscribete")){
-                log.info("Contiene la palabra Suscribete");
-                return record;
-            }
+            // Simplificamos este interceptor ya que no necesitamos verificar contenido específico
+            System.out.println("Procesando mensaje: " + record.value());
             return record;
         };
+    }
+
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOrigin("http://localhost:3000"); // URL del frontend React
+        config.addAllowedOrigin("http://localhost:3001"); // URL alternativa del frontend React
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
     }
 }

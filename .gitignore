@@ -1,0 +1,72 @@
+# Archivos y directorios de Java
+*.class
+*.log
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Archivos específicos de IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Archivos específicos de Eclipse
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# Archivos específicos de VS Code
+.vscode/
+.code-workspace
+
+# Archivos específicos de NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Archivos específicos de React
+/node_modules/
+/coverage/
+/build/
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos específicos del proyecto
+kafka-react-ui/node_modules/
+kafka-react-ui/.pnp/
+kafka-react-ui/.pnp.js
+kafka-react-ui/coverage/
+kafka-react-ui/build/
+kafka-react-ui-new/node_modules/
+kafka-react-ui-new/.pnp/
+kafka-react-ui-new/.pnp.js
+kafka-react-ui-new/coverage/
+kafka-react-ui-new/build/
+
+# Archivos de Maven
+.mvn/
